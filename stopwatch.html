@@ -1,0 +1,209 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Lawyer Stopwatch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+  
+  <!-- AngularJS -->
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.17/angular.min.js"></script>
+
+  <!-- Firebase -->
+  <script src="https://cdn.firebase.com/js/client/1.0.18/firebase.js"></script>
+
+  <!-- AngularFire -->
+  <script src="https://cdn.firebase.com/libs/angularfire/0.8.0/angularfire.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/modernizr/2.6.2/modernizr.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/foundation/5.3.3/css/foundation.min.css">
+
+  <style type="text/css">
+    .nowrap {white-space: nowrap;}
+    .iblock {display: inline-block !important;}
+    .full-width {width: 100%; max-width: 100%;}
+    .width-100px {width: 100px !important;}
+    .capitalize {text-transform:uppercase;}
+    .mono {font-family: "Courier New", Courier, monospace}
+    .close-link {color: black; line-height: 5px;float: right;}
+    .centertext {text-align: center;}
+    .righttext {text-align: right;}
+    .pad-left-10 {padding-left: 5px;}
+    .pad-top-10 {padding-top: 5px;}
+    .pad-1rem {padding: 1rem !important;}
+    .pad-left-right-01rem {padding-left: 1.32rem !important;padding-right: 1.32rem !important;}
+    .font-12{font-size: 12px}
+    .font-18{font-size: 18px}
+    .bold{font-weight: bold}
+    .stopwatch a{margin: 5px;}
+    .stopwatch {
+      max-width: 365px;
+      @media only screen and (max-width: 1023px) {
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body ng-app="MyApp">
+  <div ng-controller="MyController" ng-cloak class="pad-top-10">  
+    <div class="row">
+      <div class="large-12 columns">
+        <h1 class="centertext">Stopwatch!</h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="small-12 columns">
+        <ul class="small-block-grid-2">
+          <li ng-repeat="timer in timers" >
+          <!-- <li> -->
+            <div class="panel stopwatch">
+              <div class="font-18 bold centertext" ng-hide="timer.editing_label">
+                <a title="Click to change label" ng-click="timer.editing_label = true">{{timer.label}}</a>
+              </div>
+              <div class="centertext" ng-show="timer.editing_label">
+                <form class="iblock" ng-submit="changeTimerLabel(timer, $event)"> 
+                  <label class="iblock">Enter new label:</label>
+                  <input type="text" class="width-100px iblock">
+                  <a ng-click="timer.editing_label = false">cancel</a>
+                </form>
+              </div>
+              <div class="pad-left-10">Time: <span class="bold">{{timer.displayTime}}</span></div>
+              <div class="pad-left-10">Lawyer Time: <span class="bold">{{timer.lawyerTime}}</span></div>
+              <div class="">
+                <a ng-click="startTimer($index)" class="large button success capitalize pad-1rem">Start</a>
+                <a ng-click="stopTimer($index)" class="large button alert capitalize pad-1rem pad-left-right-01rem">Stop</a>
+                <a ng-click="resetTimer($index)" class="large button capitalize pad-1rem">Reset</a>
+              </div>
+            </div>
+          </li>
+          <li>
+            <div class="panel iblock">
+              <form class="" ng-submit="addTimer($event)"> 
+                <label>Add a new timer with label:</label>
+                <input class="" type="text" ng-placeholder="my timer {{timers.length + 2}}">
+              </form>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/foundation/5.3.3/js/foundation.min.js"></script>
+
+  <script>
+    var myApp = angular.module("MyApp", ["firebase"], function() {
+      // $locationProvider.html5Mode(true);
+    });
+
+    myApp.controller("MyController", ["$scope", "$firebase", "$location", "$timeout", "$http",
+      function($scope, $firebase, $location, $timeout, $http) {
+        // var date = new Date();
+        // var day_id = (date.getMonth()+1) + "" + (date.getDate()) + "" + date.getFullYear();
+
+        // var game_ref = new Firebase("https://armitrage.firebaseio.com/livescores/" + day_id + "/");
+        // var games = $firebase(game_ref).$asObject();
+        // games.$bindTo($scope, "games");
+
+        // $scope.$watch("timers", function(val) {
+        //   console.log("watch: ");
+        //   console.log(val);
+        // });
+
+        $scope.addTimer = function(label) {
+          console.log(label);
+          if(label.target) {
+            label = label.target.elements[0].value;
+            console.log("ADDING NEW TIMER: " + label);
+          }
+          var timer = {label: label, clock: 0, interval: null, displayTime: "00:00:00", lawyerTime: "0.0"};
+          $scope.timers.push(timer);
+        };
+
+        $scope.changeTimerLabel = function(timer, event) {
+          if(event.target) {
+            label = event.target.elements[0].value;
+          }
+          timer.label = label;
+          timer.editing_label = false;
+        };
+
+        $scope.startTimer = function(timer) {
+          if (!$scope.getTimer(timer).interval) {
+            // offset   = Date.now() - (59.8 * 60 * 1000);
+            $scope.getTimer(timer).offset = Date.now();
+            console.log("Starting timer at: " + new Date($scope.getTimer(timer).offset).toString());
+            $scope.getTimer(timer).interval = setInterval(function(){$scope.update(timer)}, 1000);
+          }
+          for(var i=0; i < $scope.timers.length; i++) {
+            if(i != timer) {
+              $scope.stopTimer(i);
+            }
+          }
+        };
+
+        $scope.stopTimer = function(timer) {
+          if ($scope.getTimer(timer).interval) {
+            clearInterval($scope.getTimer(timer).interval);
+            $scope.getTimer(timer).interval = null;
+          }
+        };
+
+        $scope.resetTimer = function(timer) {
+          $scope.stopTimer(timer);
+          $scope.getTimer(timer).clock = 0;
+          $scope.render(timer, true);
+        };
+
+
+        $scope.update = function(timer) {
+          $scope.getTimer(timer).clock += $scope.delta(timer);
+          $scope.render(timer);
+        }
+
+        $scope.delta = function(timer) {
+          var now = Date.now();
+          var d = now - $scope.getTimer(timer).offset;
+          $scope.getTimer(timer).offset = now;
+          return d;
+        };
+
+        $scope.render = function(timer, noapply) {
+          hours_raw = $scope.getTimer(timer).clock / (1000 * 60 * 60);
+          hours_frac = (Math.round(Math.floor(hours_raw*10))/10).toFixed(1);
+          hours = $scope.formatNumber(hours_raw);
+          minutes = $scope.formatNumber(($scope.getTimer(timer).clock / (1000 * 60)) % 60);
+          seconds = $scope.formatNumber(($scope.getTimer(timer).clock / 1000) % 60);
+          $scope.getTimer(timer).displayTime = hours + ":" + minutes + ":" + seconds;
+          $scope.getTimer(timer).lawyerTime = hours_frac;
+          if(!noapply) {
+            $scope.$apply();
+          }         
+        };
+
+        $scope.formatNumber = function(num) {
+          num = parseInt(num);
+          if(num < 10) {
+            num = "0" + num.toFixed(0);
+          } else {
+            num = num.toFixed(0);
+          }
+          return num;
+        };
+
+        $scope.getTimer = function(timer) {
+          return $scope.timers[timer];
+        }
+
+        $scope.timers = [];
+        $scope.addTimer("Timer 1");
+        $scope.startTimer(0);
+      }
+    ]);
+  </script>
+  <script>
+    $(document).foundation();
+  </script>
+</body>
+</html>
