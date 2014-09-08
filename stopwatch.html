@@ -199,9 +199,12 @@
           return $scope.timers[timer];
         }
 
-        $scope.timers = [];
-        $scope.addTimer("Timer 1");
-        $scope.startTimer(0);
+        setTimeout(function(){
+          $scope.timers = [];
+          $scope.addTimer("Timer 1");
+          $scope.startTimer(0);
+        }, 1000);
+        
       }
     ]);
   </script>
