@@ -164,7 +164,7 @@
         $scope.update = function(timer) {
           $scope.getTimer(timer).clock += $scope.delta(timer);
           $scope.render(timer);
-        }
+        };
 
         $scope.delta = function(timer) {
           var now = Date.now();
@@ -198,7 +198,7 @@
 
         $scope.getTimer = function(timer) {
           return $scope.timers[timer];
-        }
+        };
 
         $scope.timers = [];
         $scope.addTimer("Timer 1");
