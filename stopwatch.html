@@ -48,7 +48,7 @@
   <div ng-controller="MyController" ng-cloak class="pad-top-10">  
     <div class="row">
       <div class="large-12 columns">
-        <h1 class="centertext">Stopwatch v1.2a</h1>
+        <h1 class="centertext">Stopwatch v1.2b</h1>
       </div>
     </div>
 
@@ -94,8 +94,8 @@
   <!-- <script src="https://cdn.jsdelivr.net/foundation/5.3.3/js/foundation.min.js"></script> -->
 
   <script>
-    // window.console = window.console || {};
-    // window.console.log = window.console.log || function() {};
+    window.console = window.console || {};
+    window.console.log = window.console.log || function() {};
 
     var myApp = angular.module("MyApp", ["firebase"], function() {
     // var myApp = angular.module("MyApp", [], function() {
@@ -119,10 +119,10 @@
         // });
 
         $scope.addTimer = function(label) {
-          // console.log(label);
+          console.log(label);
           if(label.target) {
             label = label.target.elements[0].value;
-            // console.log("ADDING NEW TIMER: " + label);
+            console.log("ADDING NEW TIMER: " + label);
           }
           var timer = {label: label, clock: 0, interval: null, displayTime: "00:00:00", lawyerTime: "0.0"};
           $scope.timers.push(timer);
