@@ -116,10 +116,10 @@
         // });
 
         $scope.addTimer = function(label) {
-          console.log(label);
+          // console.log(label);
           if(label.target) {
             label = label.target.elements[0].value;
-            console.log("ADDING NEW TIMER: " + label);
+            // console.log("ADDING NEW TIMER: " + label);
           }
           var timer = {label: label, clock: 0, interval: null, displayTime: "00:00:00", lawyerTime: "0.0"};
           $scope.timers.push(timer);
@@ -137,7 +137,7 @@
           if (!$scope.getTimer(timer).interval) {
             // offset   = Date.now() - (59.8 * 60 * 1000);
             $scope.getTimer(timer).offset = Date.now();
-            console.log("Starting timer at: " + new Date($scope.getTimer(timer).offset).toString());
+            // console.log("Starting timer at: " + new Date($scope.getTimer(timer).offset).toString());
             $scope.getTimer(timer).interval = setInterval(function(){$scope.update(timer)}, 1000);
           }
           for(var i=0; i < $scope.timers.length; i++) {
