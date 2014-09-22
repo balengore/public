@@ -36,6 +36,7 @@
     .pad-left-right-01rem {padding-left: 1.32rem !important;padding-right: 1.32rem !important;}
     .font-12{font-size: 12px}
     .font-18{font-size: 18px}
+    .font-30{font-size: 30px}
     .bold{font-weight: bold}
     .stopwatch a{margin: 5px;}
     .stopwatch {
@@ -71,8 +72,8 @@
                   <a ng-click="timer.editing_label = false">cancel</a>
                 </form>
               </div>
-              <div class="pad-left-10">Time: <span class="bold">{{timer.displayTime}}</span></div>
-              <div class="pad-left-10">Lawyer Time: <span class="bold">{{timer.lawyerTime}}</span></div>
+              <div class="pad-left-10"><span class="font-30">Time: </span><span class="font-30 bold">{{timer.displayTime}}</span></div>
+              <div class="pad-left-10"><span class="font-30">Lawyer Time: </span><span class="font-30 bold">{{timer.lawyerTime}}</span></div>
               <div class="">
                 <a ng-click="startTimer($index)" class="large button success capitalize pad-1rem">Start</a>
                 <a ng-click="stopTimer($index)" class="large button alert capitalize pad-1rem pad-left-right-01rem">Stop</a>
