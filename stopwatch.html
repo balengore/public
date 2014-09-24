@@ -68,7 +68,7 @@
               <div class="centertext" ng-show="timer.editing_label">
                 <form class="iblock" ng-submit="changeTimerLabel(timer, $event)"> 
                   <label class="iblock">Enter new label:</label>
-                  <input type="text" class="width-100px iblock">
+                  <input type="text" class="width-100px iblock" ng-value="timer.label">
                   <a ng-click="timer.editing_label = false">cancel</a>
                 </form>
               </div>
@@ -85,7 +85,7 @@
             <div class="panel iblock">
               <form class="" ng-submit="addTimer($event)"> 
                 <label>Add a new timer with label:</label>
-                <input class="" type="text" ng-placeholder="my timer {{timers.length + 2}}">
+                <input class="" type="text" ng-model="new_timer_label">
               </form>
             </div>
           </li>
@@ -130,6 +130,7 @@
           }
           var timer = {label: label, clock: 0, interval: null, displayTime: "00:00:00", lawyerTime: "0.0"};
           $scope.timers.push(timer);
+          $scope.new_timer_label = "";
         };
 
         $scope.removeTimer = function(timer) {
