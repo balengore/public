@@ -7,44 +7,50 @@
   <!--[if lte IE 8]> <script> if (!Array.prototype.indexOf) { Array.prototype.indexOf = function(elt /*, from*/) { var len = this.length >>> 0; var from = Number(arguments[1]) || 0; from = (from < 0) ? Math.ceil(from) : Math.floor(from); if (from < 0) from += len; for (; from < len; from++) { if (from in this && this[from] === elt) return from; } return -1; }; } </script> <![endif]-->
   
   <!-- AngularJS -->
-  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.23/angular.min.js"></script>
+  <!-- // <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.23/angular.min.js"></script> -->
+  <script src="javascripts/angular.min.js"></script>
 
   <!-- Firebase -->
-  <script src="https://cdn.firebase.com/js/client/1.0.18/firebase.js"></script>
+  <script src="javascripts/firebase.min.js"></script>
+  <!-- <script src="https://cdn.firebase.com/js/client/1.0.18/firebase.js"></script> -->
 
   <!-- AngularFire -->
-  <script src="https://cdn.firebase.com/libs/angularfire/0.8.2/angularfire.min.js"></script>
+  <!-- <script src="https://cdn.firebase.com/libs/angularfire/0.8.2/angularfire.min.js"></script> -->
+  <script src="javascripts/angularfire.min.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/modernizr/2.6.2/modernizr.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/foundation/5.3.3/css/foundation.min.css">
+  <script src="javascripts/modernizr.min.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/modernizr/2.6.2/modernizr.min.js"></script> -->
+  <link rel="stylesheet" href="stylesheets/foundation.min.css">
+  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/foundation/5.3.3/css/foundation.min.css"> -->
 
   <style type="text/css">
-    .nowrap {white-space: nowrap;}
-    .iblock {display: inline-block !important;}
-    .full-width {width: 100%; max-width: 100%;}
-    .width-100px {width: 100px !important;}
+    .bold{font-weight: bold}
     .capitalize {text-transform:uppercase;}
-    .mono {font-family: "Courier New", Courier, monospace}
+    .centertext {text-align: center;}
+    .centertext {text-align: center;}
     .close-link {float: right; color: #888; padding-right: 2px;margin-top: -20px !important; margin-right: -16px !important;}
     .close-link:hover {color: black}
-    .centertext {text-align: center;}
-    .centertext {text-align: center;}
-    .righttext {text-align: right;}
-    .pad-left-10 {padding-left: 5px;}
-    .pad-top-10 {padding-top: 5px;}
-    .pad-1rem {padding: 1rem !important;}
-    .pad-left-right-01rem {padding-left: 1.32rem !important;padding-right: 1.32rem !important;}
     .font-12{font-size: 12px}
     .font-18{font-size: 18px}
     .font-30{font-size: 30px}
-    .bold{font-weight: bold}
+    .full-width {width: 100%; max-width: 100%;}
+    .gray_bottom{border-bottom: solid 1px #ebebeb;}
+    .greentext{color: #43AC6A;}
+    .iblock {display: inline-block !important;}
+    .mono {font-family: "Courier New", Courier, monospace}
+    .nowrap {white-space: nowrap;}
+    .pad-1rem {padding: 1rem !important;}
+    .pad-left-10 {padding-left: 5px;}
+    .pad-left-right-01rem {padding-left: 1.32rem !important;padding-right: 1.32rem !important;}
+    .pad-top-10 {padding-top: 5px;}
+    .righttext {text-align: right;}
     .stopwatch a{margin: 5px;}
-    .stopwatch {
-      max-width: 365px;
-      @media only screen and (max-width: 1023px) {
-        text-align: center;
-      }
-    }
+    .stopwatch {   max-width: 365px; @media only screen and (max-width: 1023px) {text-align: center; } }
+    .summary_row:hover{background-color: #ebebeb; cursor:pointer;}
+    .summary_row{border: solid 1px #ebebeb; border-bottom: none; padding-top:3px; padding-bottom: 3px; }
+    .summary_row_active{background-color: #43AC6A; color: white;}
+    .summary_row_active:hover{background-color: #43AC6A}
+    .width-100px {width: 100px !important;}
   </style>
 </head>
 <body ng-app="MyApp">
@@ -85,11 +91,32 @@
             <div class="panel iblock">
               <form class="" ng-submit="addTimer($event)"> 
                 <label>Add a new timer with label:</label>
-                <input class="" type="text" ng-model="new_timer_label">
+                <input class="" type="text" ng-model="new_timer_label" ng-blur="addTimer(new_timer_label)">
               </form>
             </div>
           </li>
         </ul>
+      </div>
+    </div>
+
+    <div class="row pad-top-10">
+      <div class="small-12 columns gray_bottom">
+        <div class="row font-12 summary_row" ng-class="timer.interval && 'summary_row_active'" ng-repeat="timer in timers" ng-click="startTimer($index)">
+          <div class="small-4 columns nowrap pad-left-4">
+            <span>{{timer.label}}</span>
+          </div>
+
+          <div class="small-6 columns">
+            <span class="">Current time: {{timer.displayTime}} ({{timer.lawyerTime}})</span>
+            <!-- <span class="">{{timer}}</span> -->
+          </div>
+
+          <div class="small-2 columns right pad-right-4">
+            <span class="nowrap right">
+              <span ng-click="">Start &raquo;</span>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -123,6 +150,9 @@
         // });
 
         $scope.addTimer = function(label) {
+          if(!label) {
+            return;
+          }
           console.log(label);
           if(label.target) {
             label = label.target.elements[0].value;
@@ -150,7 +180,7 @@
           if (!$scope.getTimer(timer).interval) {
             // offset   = Date.now() - (59.8 * 60 * 1000);
             $scope.getTimer(timer).offset = Date.now();
-            // console.log("Starting timer at: " + new Date($scope.getTimer(timer).offset).toString());
+            console.log("Starting " + $scope.getTimer(timer).label + " at: " + new Date($scope.getTimer(timer).offset).toString());
             $scope.getTimer(timer).interval = setInterval(function(){$scope.update(timer)}, 1000);
           }
           for(var i=0; i < $scope.timers.length; i++) {
