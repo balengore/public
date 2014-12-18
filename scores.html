@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]> <html class="ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]>    <html class="ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]>    <html class="ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--> <html lang="en"> <!--<![endif]-->
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+	<link rel="icon" href="favicon.ico" type="image/x-icon">
+  <title>Game Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+	<!-- AngularJS -->
+	<script src="/javascripts/angular.min.js"></script>
+	<script src="/javascripts/angular-animate.min.js"></script>
+
+	<!-- Firebase -->
+	<script src="/javascripts/firebase.min.js"></script>
+	<script src="/javascripts/firebase-simple-login.min.js"></script>
+	 <!-- TODO move to firebase 1.1.1 and replace the old simple login stuff with the new, built in auth -->
+
+	<!-- AngularFire -->
+	<script src="/javascripts/angularfire.min.js"></script>
+	<script src="/javascripts/modernizr.min.js"></script>
+
+	<link rel="stylesheet" href="/css/all.css">
+	<link rel="stylesheet" href="/css/foundation.min.css">
+  <link rel="stylesheet" href="/css/font-awesome.min.css" rel="stylesheet">
+</head>
+
+<body ng-app="MyApp">
+	<div ng-controller="MyController" ng-cloak id="controller">
+		<nav class="top-bar nav-bottom" data-topbar role="navigation">
+			<ul class="title-area">
+		    <li class="name">
+		      <h1><a class="pad-left-2" ng-click="openScores()"><img class="pad-bottom-8 width-25" src="fiyah-logo.png"/>Game Tracker</a></h1>
+		    </li>
+		    <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
+    		<li class="toggle-topbar menu-icon"><a href="#"><span class="no-text-transfom">{{date_formatted}}</span></a></li>
+		  </ul>
+
+		  <section class="top-bar-section">
+		    <ul class="left">
+		      <li class="has-dropdown">
+		        <a class="hide-for-small">{{date_formatted}}</a>
+		        <a class="show-for-small">Change Date</a>
+		        <ul class="dropdown">
+		        	<!-- <li ng-repeat="d in upcoming_dates"><a ng-href="/scores.html?date={{d.date}}">{{d.day}}</a></li> -->
+		        	<li ng-repeat="d in upcoming_dates"><a ng-click="openDate(d.date)">{{d.day}}</a></li>
+		          <li><a data-reveal-id="dateModal" href="#">Choose Date</a></li>
+		        </ul>
+		      </li>
+		       <li class=""><a ng-click="openHistory()">Bet History</a></li>
+		    </ul>
+
+		    <ul class="right">
+		      <li ng-if="user"><a href="#" ng-click="logout()">Logout</a></li>
+				  <li ng-if="!user"><a href="#" data-reveal-id="loginModal">Login</a></li>
+		    </ul>    
+		  </section>
+		</nav>
+
+		<div class="row" ng-hide="auth_done && games_loaded">
+			<div class="small-12 columns centertext">
+				<img src="ajax-loader-green.gif" />
+			</div>
+		</div>
+
+		<div ng-if="!hide_banners">
+			<div class="row pad-top-10" ng-show="auth_done && !user">
+				<div class="small-12 small-centered columns">
+					<div data-alert class="pad-8 alert-box secondary centertext font-18">
+						Welcome to the coolest bet tracking site in the universe. Please login to get started.
+					</div>
+				</div>
+			</div>
+
+			<div class="row pad-top-10" ng-show="auth_done && !user">
+				<div class="small-12 small-centered columns">
+					<div class="pad-8 success centertext font-18">
+						<a data-reveal-id="loginModal" class="button loginButton success medium">Login</a>
+					</div>
+				</div>
+			</div>
+
+			<div class="row pad-top-10" ng-show="auth_done && user && new_user_created && !hasTrackedGames()">
+				<div class="small-12 small-centered columns">
+					<div data-alert class="pad-8 alert-box success centertext font-18">
+						Thanks for creating an account, {{user.email}}! Click on games below to add them to your tracker. Once they've been added, you can enter your bets by clicking on a team name.
+					</div>
+				</div>
+			</div>
+
+			<div class="row pad-top-10" ng-show="auth_done && games_loaded && !hasTrackedGames() && !hasOtherGames()">
+				<div class="small-9 small-centered columns">
+					<div data-alert class="pad-8 alert-box centertext">
+						No games found for {{date_formatted}} <i class="fa fa-frown-o"></i>. Please choose a different date.
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row pad-left-right-1-small">
+			<div class="small-12 medium-6 columns">
+				
+				<div class="pad-top-16-640under" ng-show="auth_done && hasOtherGames() && !hasTrackedGames() && !new_user_created">
+					<div data-alert class="pad-8 alert-box secondary centertext">
+						Your games for {{date_formatted}} will show up here, but you haven't selected any yet. Add some from the list or choose a different date.
+					</div>
+				</div>
+
+				<div class="row">
+					
+					<div class="row" ng-if="currentVideoUrl">
+						<div class="small-12 columns">
+							<div class="flex-video">
+				        <iframe ng-if="currentVideoUrl" ng-src="{{ currentVideoUrl }}" frameborder="0" allowfullscreen></iframe>
+							</div>
+							<div class="centertext">
+								<a class="button tiny secondary font-14" ng-click="videoClose()"><i class="fa fa-stop"></i> Close Video</a>
+							</div>
+						</div>
+					</div>
+
+					<div ng-repeat="game in sorted_games" ng-if="tracked_games[game.key]" ng-class="'game-' + game.key">
+						<div ng-class="'small-12 columns font-12 other_game ' + gameClass(tracked_games[game.key])" ng-show="game.collapse">
+							<div class="row" ng-click="game.collapse = null">
+								<div class="small-2 columns nowrap pad-left-4">
+									<span class="nowrap">{{games[game.key].time.replace("PM ET", "pm").replace("Qtr", "")}}</span>
+								</div>
+								<div class="small-4 columns">
+									<span ng-class="otherGameTeamClass(games[game.key].away_score, games[game.key].home_score)">{{games[game.key].away}} {{games[game.key].away_score}}</span>
+								</div>
+								<div class="small-4 columns">
+									<span ng-class="otherGameTeamClass(games[game.key].home_score, games[game.key].away_score)">{{games[game.key].home}} {{games[game.key].home_score}}</span>
+								</div>
+								<div class="small-2 columns right pad-right-4">
+									<span class="right"><i class="fa fa-plus-square"></i></span>
+								</div>
+							</div>
+						</div>
+						<div ng-class="'left small-12 columns ' + gameClass(tracked_games[game.key])" ng-show="!game.collapse">
+							<div class="row">
+								<div class="small-6 columns nowrap pad-left-4">
+									<div class="font-12"><span ng-click="update()">{{games[game.key].time}} {{games[game.key].tv && ('| ' + games[game.key].tv)}}</span></div>
+									<div ng-click="startAddLine(game.key, games[game.key].away, 'away')" class="line-height-18 pointer" title="Click to add spread for {{games[game.key].away}}">
+										<div animate-score-on-change="games[game.key].away_score" class="width-120 iblock nowrap">
+											{{games[game.key].away}}
+											<span class="font-12" ng-show="!tracked_games[game.key].away_line && !tracked_games[game.key].home_line && !tracked_games[game.key].over && !tracked_games[game.key].under && games[game.key].away_score"> <i class="fa fa-plus-square"></i></span>
+										</div>
+										<span class="font-12 v-super" ng-hide="tracked_games[game.key].away_line || tracked_games[game.key].home_line || tracked_games[game.key].over || tracked_games[game.key].under || games[game.key].away_score"> <i class="fa fa-plus-square"></i></span>
+										<span class="right">{{games[game.key].away_score}}</span>
+									</div>
+									<div ng-click="startAddLine(game.key, games[game.key].home, 'home')" class="line-height-18 pointer" title="Click to add spread for {{games[game.key].home}}">
+										<div animate-score-on-change="games[game.key].home_score" class="width-120 iblock nowrap">
+											{{games[game.key].home}}
+											<span class="font-12" ng-show="!tracked_games[game.key].away_line && !tracked_games[game.key].home_line && !tracked_games[game.key].over && !tracked_games[game.key].under && games[game.key].home_score"> <i class="fa fa-plus-square"></i></span>
+										</div>
+										<span class="font-12 v-super" ng-hide="tracked_games[game.key].away_line || tracked_games[game.key].home_line || tracked_games[game.key].over || tracked_games[game.key].under || games[game.key].home_score"> <i class="fa fa-plus-square"></i></span>
+										<span class="right">{{games[game.key].home_score}}</span>
+									</div>
+									<div class="nowrap font-12 line-height-12 height-16">
+										<span ng-show="tracked_games[game.key].away_line">{{games[game.key].away}} {{tracked_games[game.key].away_line > 0 ? "+" : ""}}{{tracked_games[game.key].away_line}}</span>
+										<span ng-show="tracked_games[game.key].home_line">{{games[game.key].home}} {{tracked_games[game.key].home_line > 0 ? "+" : ""}}{{tracked_games[game.key].home_line}}</span>
+										<span ng-show="tracked_games[game.key].over">Over {{tracked_games[game.key].over}}</span>
+										<span ng-show="tracked_games[game.key].under">Under {{tracked_games[game.key].under}}</span>
+										<span class="capitalize" ng-show="!tracked_games[game.key].home_line && !tracked_games[game.key].away_line && !tracked_games[game.key].over && !tracked_games[game.key].under">{{games[game.key].sport}}</span>
+									</div>
+								</div>
+								<div ng-click="update()" class="small-6 columns font-12 line-height-14 pad-right-4">
+									<div animate-text-on-change="games[game.key].play_status" ng-show="games[game.key].in_progress && (games[game.key].play_status || games[game.key].balls || games[game.key].strikes || games[game.key].outs || games[game.key].base_runners)" class="pad-top-5 pad-left-0">
+										<span ng-show="games[game.key].play_status">{{games[game.key].play_status}}</span>
+										<span ng-show="games[game.key].balls > 0 || games[game.key].strikes > 0">{{games[game.key].balls || 0}}-{{games[game.key].strikes || 0}}</span>
+										<span ng-show="games[game.key].outs">| {{games[game.key].outs}} Out</span>
+										<span ng-show="games[game.key].base_runners && games[game.key].base_runners !== '000'">| Runner on {{runnerStatus(games[game.key].base_runners)}}</span>
+									</div>
+									<div animate-text-on-change="games[game.key].play_detail" ng-show="games[game.key].play_detail && games[game.key].in_progress" class="pad-4 pad-left-0">
+										Last play: {{games[game.key].play_detail}}
+									</div>
+									<div ng-show="games[game.key].summary" class="pad-4 pad-left-0 pad-top-25-640under">
+										{{games[game.key].summary}}
+									</div>
+								</div>
+							</div>
+							<div class="row pad-top-5">
+								<div class="small-6 columns pad-left-4">
+									<div class="font-12 pointer gray-hover" ng-click="game.collapse = true">
+										<span class="nowrap">
+											<span><i class="fa fa-minus-square"></i> Collapse</span>
+										</span>
+									</div>
+								</div>
+								<div class="small-6 columns right pad-right-4">
+									<div class="font-12 pointer right gray-hover" ng-click="removeGame(tracked_games[game.key])">
+										<span class="nowrap">
+											<span class="hide-for-small">Remove Game <i class="fa fa-arrow-circle-right"></i></span>
+											<span class="show-for-small">Remove Game <i class="fa fa-arrow-circle-down"></i></span>
+										</span>
+									</div>
+								</div>
+							</div>
+							<div class="row pad-left-4 font-12">
+								<div ng-if="games[game.key].videos">
+									<span class="font-12 pointer bold-hover" ng-show="!game.showvideos" ng-click="game.showvideos = true">
+										<i class="fa fa-play-circle-o"></i>
+										Show Videos
+									</span>
+									<span class="font-12 pointer gray-hover" ng-show="game.showvideos" ng-click="game.showvideos = false">
+										Hide Videos
+									</span>
+								</div>
+								<div ng-show="game.showvideos">
+									<div class="font-12 line-height-12 pad-5" ng-repeat="video in games[game.key].videos">
+										<a class="white-link" ng-click="videoClick(video)">
+											<i class="fa fa-play-circle-o"></i>
+											{{video.text}}
+										</a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<div class="small-12 medium-6 columns" ng-show="hasOtherGames()">
+				<div class="row">
+					<div class="small-12 columns">
+						<div ng-class="'row font-12 other_game' + ' game-' + game.key" ng-click="moveGameToActive(games[game.key])" ng-repeat="game in sorted_games" ng-if="games[game.key].home && !tracked_games[games[game.key].espn_node_id]">
+							<div class="small-2 columns nowrap pad-left-4" ng-click="moveGameToActive(games[game.key])">
+								<span class="nowrap">
+									<span class="hide-for-small"><i class="fa fa-arrow-circle-left"></i></span>
+									<span class="show-for-small"><i class="fa fa-arrow-circle-up"></i></span>
+									<span class="font-10">{{games[game.key].time.replace("PM ET", "pm").replace("Qtr", "")}}</span>
+								</span>
+							</div>
+							<div class="small-4 columns">
+								<span ng-class="otherGameTeamClass(games[game.key].away_score, games[game.key].home_score)">{{games[game.key].away}} {{games[game.key].away_score}}</span>
+							</div>
+							<div class="small-4 columns">
+								<span ng-class="otherGameTeamClass(games[game.key].home_score, games[game.key].away_score)">{{games[game.key].home}} {{games[game.key].home_score}}</span>
+							</div>
+							<div class="small-2 columns right pad-right-4">
+								<span class="font-10 capitalize right nowrap">{{games[game.key].sport}}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+				
+		<div class="row" ng-show="user && games_loaded && (hasTrackedGames() || hasOtherGames())">
+			<div class="small-12 columns pad-top-10 pad-left-4">
+				<div class="font-12">Scores updated: {{updated.$value}}</div>
+				<a class="button secondary tiny margin-bottom-0" ng-click="update()">
+					Update now
+				</a>
+			</div>
+			<div class="small-12 columns pad-left-4 font-12">
+				Signed in as: {{user.email}}
+			</div>
+		</div>
+			
+		<div id="loginModal" class="reveal-modal small" data-reveal>
+		  <div class="font-18 centertext pad-bottom-10">Login</div>
+		  <div ng-show="login_error" class="pad-top-10 pad-bottom-10">
+		  	<div data-alert class="alert-box alert centertext">
+					{{login_error.message.replace("FirebaseSimpleLogin: ", "") || login_error.code}}
+				</div>
+		  </div>
+		  <form ng-submit="login()"> 
+		  	<label>Email:</label>
+				<input class="" type="email" placeholder="you@gmail.com" ng-model="user_email">
+				<label>Password:</label>
+				<input class="" type="password" ng-model="user_password">
+				<div class="row">
+					<div class="small-12 columns pad-0">
+						<input type="submit" value="Login" class="button full-width small" />
+					</div>
+				</div>
+				<div class="row">
+					<div class="small-12 columns pad-0">
+						<div class="font-12 iblock graytext">(Don't have an account yet? It doesn't matter! Click Login to create one.)</div>
+					</div>
+				</div>
+			</form>
+		  <a class="close-reveal-modal font-18">&#215;</a>
+		</div>
+
+		<div id="dateModal" class="reveal-modal small" data-reveal>
+		  <div class="font-18 centertext pad-bottom-10">Change Date</div>
+		  <input type="date" ng-model="date" ng-change="updateDate()">
+		  <a class="close-reveal-modal font-18">&#215;</a>
+		</div>
+
+		<div id="addLineModal" class="reveal-modal medium" data-reveal>
+		  <form ng-submit="addLine(add_line_game_id, add_line_type, add_line_number, add_line_odds, add_line_bet_amount)" class="margin-0">
+		  	<div class="font-18 pad-bottom-10">{{add_line_team}}</div>
+		  	<div class="gray_border pad-8 margin-bottom-10">
+			  	<div class="row">
+			  		<div class="small-6 columns pad-0">
+			  			<label class="iblock">Game line:</label>
+			  		</div>
+			  		<div class="small-6 columns pad-0">
+							<input class="bet_box right" type="text" step="0.5" placeholder="-7" ng-model="add_line_number">
+			  		</div>
+			  	</div>
+			  </div>
+				
+				<div class="font-12 gray_99_text pad-top-10 pad-bottom-5">Optional</div>
+				<div class="gray_border pad-8 margin-bottom-10">
+					<div class="row pad-bottom-10">
+			  		<div class="small-6 columns pad-0">
+			  			<label class="iblock gray_99_text">Bet odds:</label>
+			  		</div>
+			  		<div class="small-6 columns pad-0">
+							<input class="bet_box right" type="text" step="0.5" placeholder="-110" ng-model="add_line_odds">
+						</div>
+					</div>
+					<div class="row">
+			  		<div class="small-6 columns pad-0">
+			  			<label class="iblock gray_99_text">Bet amount:</label>
+			  		</div>
+			  		<div class="small-6 columns pad-0">
+							<input class="bet_box right" type="text" step="any" placeholder="100" ng-model="add_line_bet_amount"><span class="right gray_99_text pad-right-2">$</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="font-12 graytext pad-top-10 pad-bottom-5">
+					<a ng-click="show_totals=!show_totals"><span ng-show="show_totals">Hide Totals &raquo;</span><span ng-hide="show_totals">Show Totals &raquo;</span></a>
+				</div>
+				<div class="gray_border pad-8 margin-bottom-10" ng-show="show_totals">
+					<div class="row pad-bottom-10 font-10">
+			  		<div class="small-1 columns pad-0 nowrap">
+			  			<label class="iblock gray_99_text">Over:</label>
+			  		</div>
+			  		<div class="small-2 columns">
+			  			<input class="bet_box_medium" type="text" step="0.5" placeholder="45" ng-model="add_over_number">
+			  		</div>
+			  		<div class="small-3 columns">
+							<input class="bet_box" type="text" step="any" placeholder="-110" ng-model="add_over_odds">
+						</div>
+				  	<div class="small-3 columns nowrap">
+			  			<label class="iblock gray_99_text">$</label>
+							<input class="bet_box_medium" type="text" step="any" placeholder="50" ng-model="add_over_amount">
+						</div>
+						<div class="small-3 columns pad-0">
+							<a class="button tiny full-width pad-top-6 pad-bottom-6 margin-bottom-0" ng-click="addLine(add_line_game_id, 'over', add_over_number, add_over_odds, add_over_amount)">Add</a>
+						</div>
+					</div>
+
+					<div class="row font-10">
+			  		<div class="small-1 columns pad-0 nowrap">
+			  			<label class="iblock gray_99_text">Under:</label>
+			  		</div>
+			  		<div class="small-2 columns">
+			  			<input class="bet_box_medium" type="text" step="0.5" placeholder="45" ng-model="add_under_number">
+			  		</div>
+			  		<div class="small-3 columns">
+							<input class="bet_box" type="text" step="any" placeholder="-110" ng-model="add_under_odds">
+						</div>
+				  	<div class="small-3 columns nowrap">
+			  			<label class="iblock gray_99_text">$</label>
+							<input class="bet_box_medium" type="text" step="any" placeholder="50" ng-model="add_under_amount">
+						</div>
+						<div class="small-3 columns pad-0">
+							<a class="button tiny full-width pad-top-6 pad-bottom-6 margin-bottom-0" ng-click="addLine(add_line_game_id, 'under', add_under_number, add_under_odds, add_under_amount)">Add</a>
+						</div>
+					</div>
+
+				</div>
+
+				<div class="row pad-top-10">
+		  		<div class="small-12 columns pad-0">
+						<input type="submit" value="Add line" class="button success small width-full" />
+					</div>
+				</div>
+
+				<div class="row pad-top-5 margin-bottom-10" style="height: 22px">
+		  		<div class="small-10 small-centered columns pad-0">
+						<div style="height: 2px; background-color: #E0E0E0; text-align: center">
+						  <span style="background-color: white; color: #E0E0E0; position: relative; top: -12px; padding-left: 5px; padding-right: 5px">
+						    or
+						  </span>
+						</div>
+					</div>
+				</div>
+
+				<div class="row">
+		  		<div class="small-12 columns pad-0">
+						<input type="submit" ng-click="add_line_number=null" value="Remove line" class="button alert small width-full margin-0" />
+					</div>
+				</div>
+			</form>
+		  <a class="close-reveal-modal font-18">&#215;</a>
+		</div>
+
+		<ol class="joyride-list" data-joyride>
+		  <li data-id="firstStop" data-text="Next" data-options="tip_location:bottom;nub_position:top;prev_button:false;next_button:false;timer:3000">
+		    <p>Click on a team name to add your spread!</p>
+		  </li>
+		</ol>
+	</div>
+
+	<script src="/javascripts/jquery-1.11.1.min.js"></script>
+	<script src="/javascripts/foundation.min.js"></script>
+	<script src="/javascripts/foundation.reveal.min.js"></script>
+  <script src="/javascripts/foundation.topbar.min.js"></script>
+
+	<script>
+	  window.console = window.console || {};
+    window.console.log = window.console.log || function() {};
+
+		var myApp = angular.module("MyApp", ["firebase", "ngAnimate"], function($locationProvider) {
+      $locationProvider.html5Mode(true);
+    });
+
+    // var myApp = angular.module("MyApp", ["firebase", "ngAnimate"]);
+
+		// function MyController($scope, $location, $timeout, $http, angularFire) {
+		myApp.controller("MyController", ["$scope", "$firebase", "$location", "$timeout", "$http", "$sce",
+			function($scope, $firebase, $location, $timeout, $http, $sce) {
+				
+				$scope.datestamp = function(date) {
+					// console.log(date);
+				  var year = date.getFullYear();
+				  var month = date.getMonth() + 1;
+				  month = (month < 10 ? "0" : "") + month;
+				  var day  = date.getDate();
+				  day = (day < 10 ? "0" : "") + day;
+				  return month + "-" + day + "-" + year;
+			  };
+
+			  $scope.prettyDate = function(date, day_only) {
+			  	var d_names = new Array("Sun", "Mon", "Tue",
+						"Wed", "Thu", "Fri", "Sat");
+
+					var m_names = new Array("Jan", "Feb", "Mar", 
+						"Apr", "May", "Jun", "Jul", "Aug", "Sep", 
+						"Oct", "Nov", "Dec");
+
+					var date_string = d_names[date.getDay()];
+					if(!day_only) {
+						date_string += ", " + m_names[date.getMonth()] + " " + date.getDate();
+					}
+					return date_string;
+			  }
+
+			  if($location.search()["date"]) {
+					$scope.date = new Date(Date.parse($location.search()["date"]));
+				} else {
+					$scope.date = new Date();
+				}
+				$scope.date_id = $scope.datestamp($scope.date);
+				$scope.date_formatted = $scope.prettyDate($scope.date);
+
+				var no_internet_connection = false;
+				if(no_internet_connection) {
+					$scope.games = {"400547674":{"away":"Cincinnati","away_score":"","date":"09-27-2014","espn_node_id":"400547674","home":"Ohio State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"6:00 PM ET"},"400547675":{"away":"Temple","away_score":"","date":"09-27-2014","espn_node_id":"400547675","home":"Connecticut","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"4:00 PM ET"},"400547676":{"away":"Memphis","away_score":"","date":"09-27-2014","espn_node_id":"400547676","home":"Ole Miss","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:30 PM ET"},"400547677":{"away":"TCU","away_score":"","date":"09-27-2014","espn_node_id":"400547677","home":"SMU","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400547678":{"away":"South Florida","away_score":"","date":"09-27-2014","espn_node_id":"400547678","home":"Wisconsin","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400547679":{"away":"Tulane","away_score":"","date":"09-27-2014","espn_node_id":"400547679","home":"Rutgers","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400547680":{"away":"Texas State","away_score":"","date":"09-27-2014","espn_node_id":"400547680","home":"Tulsa","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"8:00 PM ET"},"400547732":{"away":"Colorado State","away_score":"","date":"09-27-2014","espn_node_id":"400547732","home":"Boston College","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:30 PM ET"},"400547743":{"away":"North Carolina","away_score":"","date":"09-27-2014","espn_node_id":"400547743","home":"Clemson","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:00 PM ET"},"400547754":{"away":"Duke","away_score":"","date":"09-27-2014","espn_node_id":"400547754","home":"Miami (FL)","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:30 PM ET"},"400547764":{"away":"Florida State","away_score":"","date":"09-27-2014","espn_node_id":"400547764","home":"NC State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400547811":{"away":"Akron","away_score":"","date":"09-27-2014","espn_node_id":"400547811","home":"Pittsburgh","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"1:30 PM ET"},"400547818":{"away":"Notre Dame","away_score":"","date":"09-27-2014","espn_node_id":"400547818","home":"Syracuse","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"8:00 PM ET"},"400547823":{"away":"Kent State","away_score":"","date":"09-27-2014","espn_node_id":"400547823","home":"Virginia","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400547827":{"away":"W Michigan","away_score":"","date":"09-27-2014","espn_node_id":"400547827","home":"Virginia Tech","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:30 PM ET"},"400547833":{"away":"Wake Forest","away_score":"","date":"09-27-2014","espn_node_id":"400547833","home":"Louisville","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400547860":{"away":"Baylor","away_score":"","date":"09-27-2014","espn_node_id":"400547860","home":"Iowa State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"8:00 PM ET"},"400547861":{"away":"UTEP","away_score":"","date":"09-27-2014","espn_node_id":"400547861","home":"Kansas State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400547862":{"away":"Texas","away_score":"","date":"09-27-2014","espn_node_id":"400547862","home":"Kansas","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"4:10 PM ET"},"400547908":{"away":"Illinois","away_score":"","date":"09-27-2014","espn_node_id":"400547908","home":"Nebraska","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"9:00 PM ET"},"400547919":{"away":"Maryland","away_score":"","date":"09-27-2014","espn_node_id":"400547919","home":"Indiana","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"1:30 PM ET"},"400547930":{"away":"Iowa","away_score":"","date":"09-27-2014","espn_node_id":"400547930","home":"Purdue","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400547947":{"away":"Minnesota","away_score":"","date":"09-27-2014","espn_node_id":"400547947","home":"Michigan","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400547955":{"away":"Wyoming","away_score":"","date":"09-27-2014","espn_node_id":"400547955","home":"Michigan State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400547978":{"away":"Northwestern","away_score":"","date":"09-27-2014","espn_node_id":"400547978","home":"Penn State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400548033":{"away":"FIU","away_score":"","date":"09-27-2014","espn_node_id":"400548033","home":"UAB","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400548034":{"away":"UTSA","away_score":"","date":"09-27-2014","espn_node_id":"400548034","home":"Florida Atl","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"5:00 PM ET"},"400548035":{"away":"Louisiana Tech","away_score":"","date":"09-27-2014","espn_node_id":"400548035","home":"Auburn","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"4:00 PM ET"},"400548037":{"away":"Rice","away_score":"","date":"09-27-2014","espn_node_id":"400548037","home":"Southern Miss","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:00 PM ET"},"400548038":{"away":"W Kentucky","away_score":"","date":"09-27-2014","espn_node_id":"400548038","home":"Navy","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400548116":{"away":"Bowling Green","away_score":"","date":"09-27-2014","espn_node_id":"400548116","home":"Massachusetts","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:00 PM ET"},"400548117":{"away":"Cent Michigan","away_score":"","date":"09-27-2014","espn_node_id":"400548117","home":"Toledo","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:00 PM ET"},"400548118":{"away":"E Illinois","away_score":"","date":"09-27-2014","espn_node_id":"400548118","home":"Ohio","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"2:00 PM ET"},"400548119":{"away":"Miami (OH)","away_score":"","date":"09-27-2014","espn_node_id":"400548119","home":"Buffalo","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400548199":{"away":"Boise State","away_score":"","date":"09-27-2014","espn_node_id":"400548199","home":"Air Force","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:00 PM ET"},"400548201":{"away":"Nevada","away_score":"","date":"09-27-2014","espn_node_id":"400548201","home":"San Jose State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"10:30 PM ET"},"400548202":{"away":"UNLV","away_score":"","date":"09-27-2014","espn_node_id":"400548202","home":"San Diego State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"8:00 PM ET"},"400548270":{"away":"Oregon State","away_score":"","date":"09-27-2014","espn_node_id":"400548270","home":"USC","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"10:30 PM ET"},"400548271":{"away":"Colorado","away_score":"","date":"09-27-2014","espn_node_id":"400548271","home":"California","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"4:00 PM ET"},"400548272":{"away":"Washington St","away_score":"","date":"09-27-2014","espn_node_id":"400548272","home":"Utah","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"8:00 PM ET"},"400548273":{"away":"Stanford","away_score":"","date":"09-27-2014","espn_node_id":"400548273","home":"Washington","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"4:15 PM ET"},"400548379":{"away":"New Mexico St","away_score":"","date":"09-27-2014","espn_node_id":"400548379","home":"LSU","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:30 PM ET"},"400548380":{"away":"Missouri","away_score":"","date":"09-27-2014","espn_node_id":"400548380","home":"South Carolina","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:00 PM ET"},"400548381":{"away":"Tennessee","away_score":"","date":"09-27-2014","espn_node_id":"400548381","home":"Georgia","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400548382":{"away":"Arkansas","away_score":"","date":"09-27-2014","espn_node_id":"400548382","home":"Texas A&M","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400548383":{"away":"Vanderbilt","away_score":"","date":"09-27-2014","espn_node_id":"400548383","home":"Kentucky","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400548416":{"away":"South Alabama","away_score":"","date":"09-27-2014","espn_node_id":"400548416","home":"Idaho","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"5:00 PM ET"},"400548417":{"away":"Troy","away_score":"","date":"09-27-2014","espn_node_id":"400548417","home":"UL Monroe","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:00 PM ET"},"400548459":{"away":"Army","away_score":"","date":"09-27-2014","espn_node_id":"400548459","home":"Yale","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"1:00 PM ET"},"$id":"games","$priority":null} 
+				  $scope.games_loaded = true;
+				  $scope.sorted_games = [];
+				  var today = new Date();
+				  var today_str = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate() + " ";
+				  Object.keys($scope.games).forEach(function(espn_node_id){
+		  			if(espn_node_id.indexOf("$") != 0) {
+		  				if($scope.games[espn_node_id].start_time) {
+		  					var sort_time =  new Date(Date.parse(today_str + $scope.games[espn_node_id].start_time.replace("ET", "EST"))).getTime();
+				  		} else {
+				  			var sort_time = $scope.games[espn_node_id].away;
+				  		}
+		  				 
+			  			$scope.sorted_games.push({key: espn_node_id, sort_val: sort_time});
+		  			}
+		  		});
+		  		$scope.sorted_games = $scope.sorted_games.sort(function(a, b){return a.sort_val - b.sort_val});
+		  		$scope.tracked_games = {"400547754":{"away_line":7,"espn_node_id":"400547754"},"400547764":{"espn_node_id":"400547764","home_line":19},"400547919":{"away_line":4.5,"espn_node_id":"400547919"},"400548035":{"away_line":32.5,"espn_node_id":"400548035"},"400548273":{"away_line":-7.5,"espn_node_id":"400548273"},"$id":"09-27-2014","$priority":null};
+					$scope.auth_done = true;
+					$scope.user = {};
+					$scope.updated = "BLAH";
+				 	$scope.upcoming_dates = [{"day":"Sat, Sep 27","date":"09-27-2014","$$hashKey":103},{"day":"Sun, Sep 28","date":"09-28-2014","$$hashKey":104},{"day":"Mon, Sep 29","date":"09-29-2014","$$hashKey":105}]
+
+				} else {
+					var base_ref = "https://armitrage.firebaseio.com/livescores/dates/"
+					var date_ref = new Firebase(base_ref + $scope.date_id + "/");
+				  var games_ref = date_ref.child("games");
+				  var games = $firebase(games_ref).$asObject();
+				  
+				  games.$bindTo($scope, "games");
+				  games.$loaded().then(function(){
+				  	if($scope.games.$value === null) {
+				  		if($scope.upcoming_dates.length > 0) {
+				  			// console.log($scope.upcoming_dates);
+				  			$scope.hide_banners = true;
+				  			$scope.openDate($scope.upcoming_dates[0].date);
+				  			return;
+				  		}
+				  	} else {
+				  		// console.log(JSON.stringify($scope.games));
+				  		$scope.sorted_games = [];
+						  var today = new Date();
+						  var today_str = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate() + " ";
+						  Object.keys($scope.games).forEach(function(espn_node_id){
+				  			if(espn_node_id.indexOf("$") != 0) {
+				  				if($scope.games[espn_node_id].start_time) {
+				  					var sort_time =  new Date(Date.parse(today_str + $scope.games[espn_node_id].start_time.replace("ET", "EST"))).getTime();
+						  		} else {
+						  			var sort_time = $scope.games[espn_node_id].away;
+						  		}
+						  		var sorted_game = {key: espn_node_id, sort_val: sort_time};
+						  		if(!$scope.games[espn_node_id].in_progress && $scope.games[espn_node_id].time.indexOf("Final") > -1) {
+						  			sorted_game.collapse = true;
+						  		}
+					  			$scope.sorted_games.push(sorted_game);
+				  			}
+				  		});
+				  		$scope.sorted_games = $scope.sorted_games.sort(function(a, b){
+				  			if (a.sort_val < b.sort_val) return -1;
+								if (a.sort_val > b.sort_val) return 1;
+								return 0;
+							});
+							// console.log($scope.sorted_games);
+				  		$scope.games_loaded = true;
+				  	}
+				  });
+					
+				  var users_ref = new Firebase("https://armitrage.firebaseio.com/livescores/users/");
+				  var user_game_ref = {}
+					$scope.authClient = new FirebaseSimpleLogin(users_ref, function(error, user) {
+						$scope.auth_done = true;
+					  if (error) {
+					    console.log("IN AUTH CLIENT CALLBACK, ERROR:");	    
+					    console.log(error);
+					  } else if (user) {
+					    $('#loginModal').foundation('reveal', 'close');
+					    $scope.user = user;
+					    console.log("User ID: " + user.uid + ", Provider: " + user.provider + ", Email: " + user.email);
+					    user_game_ref = users_ref.child(user.uid).child($scope.date_id);
+					    users_ref.child(user.uid).child("email").set(user.email);
+					    var tracked_games = $firebase(user_game_ref).$asObject();
+				  		tracked_games.$bindTo($scope, "tracked_games");
+					  } else {
+					    console.log("Not logged in");
+					  }
+					});
+				 
+				  var updated_ref = date_ref.child("lastupdate");
+				  var updated = $firebase(updated_ref).$asObject();
+				  updated.$bindTo($scope, "updated");
+
+				  var other_dates = date_ref.parent();
+				  $scope.upcoming_dates = [];
+					other_dates.once("value", function(data){
+						var now_date = new Date();
+						var now_formatted = $scope.prettyDate(now_date, false);
+						data.forEach(function(childDate){
+							var c_date = new Date(Date.parse(childDate.name()));
+							if(c_date - now_date > -86400000) {
+								var day_formatted = $scope.prettyDate(c_date, false);
+								if(day_formatted === now_formatted) {
+									day_formatted = "Today";
+								}
+								$scope.upcoming_dates.push({day: day_formatted, date: childDate.name()});
+							}
+						});
+					});
+				}
+
+				// $timeout(function(){console.log($scope)}, 5*1000);
+			  // $scope.score_checker = $timeout(function(){$scope.update()}, 60*1000);
+
+			  $scope.login = function() {
+			  	// Log a user in using email/password authentication
+			  	$scope.authClient.createUser($scope.user_email, $scope.user_password, function(error, user) {
+						if (error === null || error.code === "EMAIL_TAKEN") {
+							if(error === null) {
+								$scope.new_user_created = true;
+							}
+					    $scope.authClient.login("password", {
+							  email: $scope.user_email,
+							  password: $scope.user_password
+							});
+					  } else {
+					  	$scope.login_error = error;
+					    console.log("Error creating user:", error);
+					  }
+					});
+			  };
+
+			  $scope.logout = function() {
+			  	$scope.authClient.logout();
+			  	window.location.reload();
+			  };
+
+			  $scope.update = function() {
+			  	console.log("updating");
+			  	$scope.update_in_progress = "Updating...";
+					$http.get('/espnupdate?date=' + $scope.date_id).success(function(){
+						$scope.update_in_progress = null;
+					});
+			  };
+			  $scope.update();
+
+			  $scope.hasTrackedGames = function() {
+			  	if(!$scope.tracked_games) {
+			  		return true;
+			  	}
+			  	if($scope.tracked_games.$value === null) {
+			  		return false;
+			  	} 
+			  	return true;
+			  };
+
+			  $scope.hasOtherGames = function() {
+			  	if(!$scope.games || !$scope.tracked_games) {
+			  		return false;
+			  	}
+			  	if($scope.games.$value === null) {
+			  		return false;
+			  	}
+		  		return true;
+			  };
+
+			  $scope.startAddLine = function(espn_node_id, team_name, team_type) {
+			  	$scope.add_line_game_id = espn_node_id;
+			  	$scope.add_line_team = team_name;
+			  	$scope.add_line_type = team_type;
+			  	var line_type = team_type == "home" || team_type == "away" ? (team_type + "_line") : team_type
+			  	$scope.add_line_number = $scope.tracked_games[espn_node_id][line_type];
+			  	$scope.add_line_odds = $scope.tracked_games[espn_node_id][team_type + "_odds"];
+			  	$scope.add_line_bet_amount = $scope.tracked_games[espn_node_id][team_type + "_amount"];
+			  	$('#addLineModal').foundation('reveal', 'open');
+			  };
+
+			  $scope.addLine = function(game_id, line_type, line, odds, amount) {
+			  	console.log(game_id, line_type, line);
+			  	game = $scope.tracked_games[game_id];
+			  	if(line || line == "0") {
+			  		if(line_type == "home") {
+			  			game.home_line = parseFloat(line);
+			  			if(odds) {
+			  				game.home_odds = parseFloat(odds);
+			  			}
+			  			if(amount) {
+			  				game.home_amount = parseFloat(amount);	
+			  			}
+			  		} else if(line_type == "away") {
+			  			game.away_line = parseFloat(line);
+			  			if(odds) {
+			  				game.away_odds = parseFloat(odds);
+			  			}
+			  			if(amount) {
+			  				game.away_amount = parseFloat(amount);	
+			  			}
+			  		} else if(line_type == "over") {
+			  			game.over = parseFloat(line);
+			  			if(odds) {
+			  				game.over_odds = parseFloat(odds);
+			  			}
+			  			if(amount) {
+			  				game.over_amount = parseFloat(amount);	
+			  			}
+			  		} else if(line_type == "under") {
+			  			game.under = parseFloat(line);
+			  			if(odds) {
+			  				game.under_odds = parseFloat(odds);
+			  			}
+			  			if(amount) {
+			  				game.under_amount = parseFloat(amount);	
+			  			}
+			  		}
+			  	} else {
+			  		if(line_type == "home") {
+			  			game.home_line = null;
+			  			game.home_odds = null;
+			  			game.home_amount = null;
+			  		} else if(line_type == "away") {
+			  			game.away_line = null;
+			  			game.away_odds = null;
+			  			game.away_amount = null;
+			  		} else if(line_type == "over") {
+			  			game.over = null;
+			  			game.over_odds = null;
+			  			game.over_amount = null;
+			  		} else if(line_type == "under") {
+			  			game.under = null;
+			  			game.under_odds = null;
+			  			game.under_amount = null;
+			  		}
+			  	}
+			  	$scope.add_line_game_id = null;
+			  	$scope.add_line_team = null;
+			  	$scope.add_line_type = null;
+			  	$scope.add_line_odds = null;
+			  	$scope.add_line_number = null;
+			  	$scope.add_line_bet_amount = null;
+			  	$scope.add_over_number = null;
+			  	$scope.add_over_amount = null;
+			  	$scope.add_over_odds = null;
+			  	$scope.add_under_number = null;
+			  	$scope.add_under_amount = null;
+			  	$scope.add_under_odds = null;
+			  	$('#addLineModal').foundation('reveal', 'close');
+			  };
+
+			  $scope.otherGameTeamClass = function(score, other_score) {
+			  	var style = "nowrap";
+
+			  	if(score && score > other_score) {
+			  		// style += " greentext";
+			  		style += " bold";
+			  	}
+			  	return style;
+			  };
+
+			  $scope.gameClass = function(game) {
+			  	var style = "tracked_game";
+
+			  	// console.log(game);
+			  	var real_game = $scope.games[game.espn_node_id];
+			  	
+			  	if (!real_game.in_progress && !real_game.home_score && !real_game.away_score) {
+			  		return style;
+			  	}
+			  	
+			  	if(game.away_line && game.home_line) {
+			  		if ((real_game.away_score + game.away_line >= real_game.home_score) && (real_game.home_score + game.home_line >= real_game.away_score)) {
+			  			style += (real_game.in_progress ? " winning greenPulseAnim" : " win-arb");
+			  		} else {
+			  			style += " losing-arb";
+			  		}
+			  	}
+			  	
+			  	if(game.away_line) {
+			  		if ($scope.awayCovering(game)) {
+			  			style += (real_game.in_progress ? " winning" : " win");
+			  		} else if ($scope.awayNotCovering(game)) {
+			  			style += (real_game.in_progress ? " losing" : " lost");
+			  		} else {
+			  			style += " tied";
+			  		}
+			  	}
+
+			  	if (game.home_line) {
+			  		if ($scope.homeCovering(game)) {
+			  			style += (real_game.in_progress ? " winning" : " win");
+			  		} else if ($scope.homeNotCovering(game)) {
+			  			style += (real_game.in_progress ? " losing" : " lost");
+			  		} else {
+			  			style += " tied";
+			  		}
+			  	}
+
+			  	if (game.over) {
+			  		if (real_game.home_score + real_game.away_score > game.over) {
+			  			style += (real_game.in_progress ? " winning" : " win");
+			  		} else if (real_game.home_score + real_game.away_score < game.over) {
+			  			style += (real_game.in_progress ? " losing" : " lost");
+			  		} else {
+			  			style += " tied";
+			  		}
+			  	}
+
+			  	if (game.under) {
+			  		if (real_game.home_score + real_game.away_score < game.under) {
+			  			style += (real_game.in_progress ? " winning" : " win");
+			  		} else if (real_game.home_score + real_game.away_score > game.under) {
+			  			style += (real_game.in_progress ? " losing" : " lost");
+			  		} else {
+			  			style += " tied";
+			  		}
+			  	}
+			  	return style;
+			  };
+
+			  $scope.homeCovering = function(game) {
+			  	var real_game = $scope.games[game.espn_node_id];
+			  	if(game.home_line && (real_game.in_progress || real_game.home_score || real_game.away_score)) {
+			  		return real_game.home_score + game.home_line > real_game.away_score;
+			  	}
+			  	return null;
+			  };
+
+			  $scope.awayCovering = function(game) {
+			  	var real_game = $scope.games[game.espn_node_id];
+					if(game.away_line && (real_game.in_progress || real_game.home_score || real_game.away_score)) {
+			  		return real_game.away_score + game.away_line > real_game.home_score;
+			  	}
+			  	return null;
+			  };
+
+			  $scope.homeNotCovering = function(game) {
+			  	var real_game = $scope.games[game.espn_node_id];
+			  	if(game.home_line) {
+			  		return real_game.home_score + game.home_line < real_game.away_score;
+			  	}
+			  	return null;
+			  };
+
+			  $scope.awayNotCovering = function(game) {
+			  	var real_game = $scope.games[game.espn_node_id];
+			  	if(game.away_line) {
+			  		return real_game.away_score + game.away_line < real_game.home_score;
+			  	}
+			  	return null;
+			  };
+
+			  $scope.runnerStatus = function(base_runners) {
+			  	if(!base_runners) {
+			  		return "";
+			  	}
+			  	var b = [];
+
+			  	if(base_runners.charAt(2) == "1") {
+			  		b.push("1st");
+			  	}
+			  	if(base_runners.charAt(1) == "1") {
+			  		b.push("2nd");
+			  	}
+			  	if(base_runners.charAt(0) == "1") {
+			  		b.push("3rd");
+			  	}
+			  	return b.join(", ");
+			  };
+			  $scope.videoClick = function(video) {
+			  	console.log(video);
+					$scope.currentVideoUrl = $sce.trustAsResourceUrl('http://m.espn.go.com/general/video.mp4?videoprofile=external&id=' + video.id + '&suite=wdgwespmobileweb&player=Off%20Deck%20%3A%20GameCast');
+					window.scrollTo(0, 0);
+			  };
+			  $scope.videoClose = function() {
+			  	console.log("close video");
+					$scope.currentVideoUrl = null;
+			  };
+
+			  $scope.moveGameToActive = function(game) {
+			  	console.log(game);
+			  	$scope.tracked_games[game.espn_node_id] = {espn_node_id: game.espn_node_id};
+			  };
+			  $scope.removeGame = function(game) {
+			  	// console.log(game);
+			  	user_game_ref.child(game.espn_node_id).remove();
+			  };
+			  $scope.mouseMove = function(event) {
+			  	// console.log(event);
+			  	$scope.mouseEvent = event;
+			  };
+			  $scope.updateDate = function() {
+			  	$scope.date_id = $scope.datestamp($scope.date);
+			  	$scope.openDate($scope.date_id);
+				};
+			  $scope.openDate = function(id) {
+			  	$location.search("date", id);
+			    window.location.href = $location.absUrl();
+			  };
+			  $scope.openHistory = function() {
+			  	$location.path("/history.html");
+			  	$location.search("date", null);
+			    window.location.href = $location.absUrl();
+			  };
+			  $scope.openScores = function() {
+			  	$location.path("/scores.html");
+			    window.location.href = $location.absUrl();
+			  };
+			  $scope.vibrate = function(num_games){
+			  	if ("vibrate" in navigator) {
+			  		var vib = [];
+				  	for(var i=0; i < num_games; i++) {
+				  		vib.push(200);
+				  		vib.push(100);
+				  	}
+    				navigator.vibrate(vib);
+					}
+			  }
+			}
+		]);
+
+		myApp.directive('animateScoreOnChange', function($animate, $timeout) {
+		  return function(scope, elem, attr) {
+	      scope.$watch(attr.animateScoreOnChange, function(nv,ov) {
+	        if (nv!=ov) {
+	          var c = "score_change";
+	          $animate.addClass(elem,c, function() {
+	          	$timeout(function(){$animate.removeClass(elem,c)}, 1000);
+	          });
+	        }
+	      });
+		  }
+		});
+
+		myApp.directive('animateTextOnChange', function($animate, $timeout) {
+		  return function(scope, elem, attr) {
+	      scope.$watch(attr.animateTextOnChange, function(nv,ov) {
+	        if (nv!=ov) {
+	          var c = "text_change";
+	          $animate.addClass(elem,c, function() {
+	          	$timeout(function(){$animate.removeClass(elem,c)}, 100);
+	          });
+	        }
+	      });
+		  }
+		});
+
+	</script>
+	<script>
+    $(document).ready(function() {
+	    $(document).foundation();
+		});
+  </script>
+</body>
+</html>
