@@ -10,22 +10,26 @@
 	<link rel="icon" href="favicon.ico" type="image/x-icon">
   <title>Game Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
-	<!-- AngularJS -->
+
 	<script src="javascripts/angular.min.js"></script>
 	<script src="javascripts/angular-animate.min.js"></script>
 
-	<!-- Firebase -->
 	<script src="javascripts/firebase.min.js"></script>
 	<script src="javascripts/firebase-simple-login.min.js"></script>
 	 <!-- TODO move to firebase 1.1.1 and replace the old simple login stuff with the new, built in auth -->
 
-	<!-- AngularFire -->
 	<script src="javascripts/angularfire.min.js"></script>
+	
 	<script src="javascripts/modernizr.min.js"></script>
+	<script src="javascripts/jquery-1.11.1.min.js"></script>
+	<script src="javascripts/foundation.min.js"></script>
+	<script src="javascripts/foundation.reveal.min.js"></script>
+  <script src="javascripts/foundation.topbar.min.js"></script>
 
-	<link rel="stylesheet" href="css/all.css">
-	<link rel="stylesheet" href="css/foundation.min.css">
-  <link rel="stylesheet" href="css/font-awesome.min.css" rel="stylesheet">
+
+	<link rel="stylesheet" href="stylesheets/all.css" rel="stylesheet">
+	<link rel="stylesheet" href="stylesheets/foundation.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="stylesheets/font-awesome.min.css" rel="stylesheet">
 </head>
 
 <body ng-app="MyApp">
@@ -33,7 +37,7 @@
 		<nav class="top-bar nav-bottom" data-topbar role="navigation">
 			<ul class="title-area">
 		    <li class="name">
-		      <h1><a class="pad-left-2" ng-click="openScores()"><img class="pad-bottom-8 width-25" src="fiyah-logo.png"/>Game Tracker</a></h1>
+		      <h1><a class="pad-left-2" ng-click="openScores()"><img class="pad-bottom-8 width-25" src="images/fiyah-logo.png"/>Game Tracker</a></h1>
 		    </li>
 		    <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
     		<li class="toggle-topbar menu-icon"><a href="#"><span class="no-text-transfom">{{date_formatted}}</span></a></li>
@@ -62,7 +66,7 @@
 
 		<div class="row" ng-hide="auth_done && games_loaded">
 			<div class="small-12 columns centertext">
-				<img src="ajax-loader-green.gif" />
+				<img src="images/ajax-loader-green.gif" />
 			</div>
 		</div>
 
@@ -403,11 +407,6 @@
 		</ol>
 	</div>
 
-	<script src="/javascripts/jquery-1.11.1.min.js"></script>
-	<script src="/javascripts/foundation.min.js"></script>
-	<script src="/javascripts/foundation.reveal.min.js"></script>
-  <script src="/javascripts/foundation.topbar.min.js"></script>
-
 	<script>
 	  window.console = window.console || {};
     window.console.log = window.console.log || function() {};
@@ -457,28 +456,6 @@
 
 				var no_internet_connection = false;
 				if(no_internet_connection) {
-					$scope.games = {"400547674":{"away":"Cincinnati","away_score":"","date":"09-27-2014","espn_node_id":"400547674","home":"Ohio State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"6:00 PM ET"},"400547675":{"away":"Temple","away_score":"","date":"09-27-2014","espn_node_id":"400547675","home":"Connecticut","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"4:00 PM ET"},"400547676":{"away":"Memphis","away_score":"","date":"09-27-2014","espn_node_id":"400547676","home":"Ole Miss","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:30 PM ET"},"400547677":{"away":"TCU","away_score":"","date":"09-27-2014","espn_node_id":"400547677","home":"SMU","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400547678":{"away":"South Florida","away_score":"","date":"09-27-2014","espn_node_id":"400547678","home":"Wisconsin","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400547679":{"away":"Tulane","away_score":"","date":"09-27-2014","espn_node_id":"400547679","home":"Rutgers","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400547680":{"away":"Texas State","away_score":"","date":"09-27-2014","espn_node_id":"400547680","home":"Tulsa","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"8:00 PM ET"},"400547732":{"away":"Colorado State","away_score":"","date":"09-27-2014","espn_node_id":"400547732","home":"Boston College","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:30 PM ET"},"400547743":{"away":"North Carolina","away_score":"","date":"09-27-2014","espn_node_id":"400547743","home":"Clemson","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:00 PM ET"},"400547754":{"away":"Duke","away_score":"","date":"09-27-2014","espn_node_id":"400547754","home":"Miami (FL)","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:30 PM ET"},"400547764":{"away":"Florida State","away_score":"","date":"09-27-2014","espn_node_id":"400547764","home":"NC State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400547811":{"away":"Akron","away_score":"","date":"09-27-2014","espn_node_id":"400547811","home":"Pittsburgh","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"1:30 PM ET"},"400547818":{"away":"Notre Dame","away_score":"","date":"09-27-2014","espn_node_id":"400547818","home":"Syracuse","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"8:00 PM ET"},"400547823":{"away":"Kent State","away_score":"","date":"09-27-2014","espn_node_id":"400547823","home":"Virginia","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400547827":{"away":"W Michigan","away_score":"","date":"09-27-2014","espn_node_id":"400547827","home":"Virginia Tech","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:30 PM ET"},"400547833":{"away":"Wake Forest","away_score":"","date":"09-27-2014","espn_node_id":"400547833","home":"Louisville","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400547860":{"away":"Baylor","away_score":"","date":"09-27-2014","espn_node_id":"400547860","home":"Iowa State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"8:00 PM ET"},"400547861":{"away":"UTEP","away_score":"","date":"09-27-2014","espn_node_id":"400547861","home":"Kansas State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400547862":{"away":"Texas","away_score":"","date":"09-27-2014","espn_node_id":"400547862","home":"Kansas","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"4:10 PM ET"},"400547908":{"away":"Illinois","away_score":"","date":"09-27-2014","espn_node_id":"400547908","home":"Nebraska","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"9:00 PM ET"},"400547919":{"away":"Maryland","away_score":"","date":"09-27-2014","espn_node_id":"400547919","home":"Indiana","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"1:30 PM ET"},"400547930":{"away":"Iowa","away_score":"","date":"09-27-2014","espn_node_id":"400547930","home":"Purdue","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400547947":{"away":"Minnesota","away_score":"","date":"09-27-2014","espn_node_id":"400547947","home":"Michigan","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400547955":{"away":"Wyoming","away_score":"","date":"09-27-2014","espn_node_id":"400547955","home":"Michigan State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400547978":{"away":"Northwestern","away_score":"","date":"09-27-2014","espn_node_id":"400547978","home":"Penn State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400548033":{"away":"FIU","away_score":"","date":"09-27-2014","espn_node_id":"400548033","home":"UAB","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400548034":{"away":"UTSA","away_score":"","date":"09-27-2014","espn_node_id":"400548034","home":"Florida Atl","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"5:00 PM ET"},"400548035":{"away":"Louisiana Tech","away_score":"","date":"09-27-2014","espn_node_id":"400548035","home":"Auburn","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"4:00 PM ET"},"400548037":{"away":"Rice","away_score":"","date":"09-27-2014","espn_node_id":"400548037","home":"Southern Miss","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:00 PM ET"},"400548038":{"away":"W Kentucky","away_score":"","date":"09-27-2014","espn_node_id":"400548038","home":"Navy","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400548116":{"away":"Bowling Green","away_score":"","date":"09-27-2014","espn_node_id":"400548116","home":"Massachusetts","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:00 PM ET"},"400548117":{"away":"Cent Michigan","away_score":"","date":"09-27-2014","espn_node_id":"400548117","home":"Toledo","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:00 PM ET"},"400548118":{"away":"E Illinois","away_score":"","date":"09-27-2014","espn_node_id":"400548118","home":"Ohio","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"2:00 PM ET"},"400548119":{"away":"Miami (OH)","away_score":"","date":"09-27-2014","espn_node_id":"400548119","home":"Buffalo","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400548199":{"away":"Boise State","away_score":"","date":"09-27-2014","espn_node_id":"400548199","home":"Air Force","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:00 PM ET"},"400548201":{"away":"Nevada","away_score":"","date":"09-27-2014","espn_node_id":"400548201","home":"San Jose State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"10:30 PM ET"},"400548202":{"away":"UNLV","away_score":"","date":"09-27-2014","espn_node_id":"400548202","home":"San Diego State","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"8:00 PM ET"},"400548270":{"away":"Oregon State","away_score":"","date":"09-27-2014","espn_node_id":"400548270","home":"USC","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"10:30 PM ET"},"400548271":{"away":"Colorado","away_score":"","date":"09-27-2014","espn_node_id":"400548271","home":"California","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"4:00 PM ET"},"400548272":{"away":"Washington St","away_score":"","date":"09-27-2014","espn_node_id":"400548272","home":"Utah","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"8:00 PM ET"},"400548273":{"away":"Stanford","away_score":"","date":"09-27-2014","espn_node_id":"400548273","home":"Washington","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"4:15 PM ET"},"400548379":{"away":"New Mexico St","away_score":"","date":"09-27-2014","espn_node_id":"400548379","home":"LSU","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:30 PM ET"},"400548380":{"away":"Missouri","away_score":"","date":"09-27-2014","espn_node_id":"400548380","home":"South Carolina","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:00 PM ET"},"400548381":{"away":"Tennessee","away_score":"","date":"09-27-2014","espn_node_id":"400548381","home":"Georgia","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400548382":{"away":"Arkansas","away_score":"","date":"09-27-2014","espn_node_id":"400548382","home":"Texas A&M","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"3:30 PM ET"},"400548383":{"away":"Vanderbilt","away_score":"","date":"09-27-2014","espn_node_id":"400548383","home":"Kentucky","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"12:00 PM ET"},"400548416":{"away":"South Alabama","away_score":"","date":"09-27-2014","espn_node_id":"400548416","home":"Idaho","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"5:00 PM ET"},"400548417":{"away":"Troy","away_score":"","date":"09-27-2014","espn_node_id":"400548417","home":"UL Monroe","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"7:00 PM ET"},"400548459":{"away":"Army","away_score":"","date":"09-27-2014","espn_node_id":"400548459","home":"Yale","home_score":"","in_progress":false,"play_detail":"","sport":"ncaaf","summary":"","time":"1:00 PM ET"},"$id":"games","$priority":null} 
-				  $scope.games_loaded = true;
-				  $scope.sorted_games = [];
-				  var today = new Date();
-				  var today_str = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate() + " ";
-				  Object.keys($scope.games).forEach(function(espn_node_id){
-		  			if(espn_node_id.indexOf("$") != 0) {
-		  				if($scope.games[espn_node_id].start_time) {
-		  					var sort_time =  new Date(Date.parse(today_str + $scope.games[espn_node_id].start_time.replace("ET", "EST"))).getTime();
-				  		} else {
-				  			var sort_time = $scope.games[espn_node_id].away;
-				  		}
-		  				 
-			  			$scope.sorted_games.push({key: espn_node_id, sort_val: sort_time});
-		  			}
-		  		});
-		  		$scope.sorted_games = $scope.sorted_games.sort(function(a, b){return a.sort_val - b.sort_val});
-		  		$scope.tracked_games = {"400547754":{"away_line":7,"espn_node_id":"400547754"},"400547764":{"espn_node_id":"400547764","home_line":19},"400547919":{"away_line":4.5,"espn_node_id":"400547919"},"400548035":{"away_line":32.5,"espn_node_id":"400548035"},"400548273":{"away_line":-7.5,"espn_node_id":"400548273"},"$id":"09-27-2014","$priority":null};
-					$scope.auth_done = true;
-					$scope.user = {};
-					$scope.updated = "BLAH";
-				 	$scope.upcoming_dates = [{"day":"Sat, Sep 27","date":"09-27-2014","$$hashKey":103},{"day":"Sun, Sep 28","date":"09-28-2014","$$hashKey":104},{"day":"Mon, Sep 29","date":"09-29-2014","$$hashKey":105}]
 
 				} else {
 					var base_ref = "https://armitrage.firebaseio.com/livescores/dates/"
@@ -595,7 +572,8 @@
 			  $scope.update = function() {
 			  	console.log("updating");
 			  	$scope.update_in_progress = "Updating...";
-					$http.get('/espnupdate?date=' + $scope.date_id).success(function(){
+					// $http.get('/espnupdate?date=' + $scope.date_id).success(function(){
+					$http.get('https://armitrage.herokuapp.com/espnupdate?date=' + $scope.date_id).success(function(){
 						$scope.update_in_progress = null;
 					});
 			  };
